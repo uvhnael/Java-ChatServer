@@ -12,8 +12,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WSMessage {
+    private String type = "MESSAGE";
     private String chatId;
     private String senderId;
+    private String senderName;
     private String content;
     private String timestamp;
     private List<Attachment> attachments;

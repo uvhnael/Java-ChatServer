@@ -3,6 +3,7 @@ package org.uvhnael.chatserver.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.uvhnael.chatserver.dto.ErrorResponse;
@@ -11,6 +12,7 @@ import org.uvhnael.chatserver.dto.FriendRequestResponse;
 import org.uvhnael.chatserver.dto.FriendResponse;
 import org.uvhnael.chatserver.model.FriendRequest;
 import org.uvhnael.chatserver.service.UserService;
+import org.uvhnael.chatserver.websocket.WSFriendRequestAccept;
 
 import java.util.List;
 
@@ -20,6 +22,8 @@ import java.util.List;
 public class FriendController {
 
     private final UserService userService;
+
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @GetMapping("/{userId}")
     public ResponseEntity<?> getFriends(@PathVariable String userId) {
@@ -72,7 +76,12 @@ public class FriendController {
     @PutMapping("/accept/{userId}/{friendId}")
     public ResponseEntity<?> acceptFriend(@PathVariable String userId, @PathVariable String friendId) {
         try {
-            userService.acceptFriendRequest(userId, friendId);
+            WSFriendRequestAccept fra = userService.acceptFriendRequest(userId, friendId);
+
+            System.out.println("Friend request accepted: " + fra);
+
+            simpMessagingTemplate.convertAndSendToUser(fra.getReceiverId(), "/queue/messages", fra);
+
             return ResponseEntity.status(HttpStatus.OK).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(createErrorResponse("Unexpected error", e.getMessage()));

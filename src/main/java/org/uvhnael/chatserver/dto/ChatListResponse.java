@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class ChatListResponse {
     private String id;
     private String name;
+    private String image;
     private String lastMessage;
     private String timestamp;
     private int unreadCount;

@@ -69,7 +69,9 @@ public class PrivateChatService {
             throw new ChatNotFoundException("Chat not found");
         }
         PrivateChat pvChat = chat.get();
-        pvChat.getMessages().add(new Message(wsMessage.getSenderId(), wsMessage.getContent(), new Timestamp(System.currentTimeMillis()).toString(), wsMessage.getAttachments()));
+        List<String> readBy = new ArrayList<>();
+        readBy.add(wsMessage.getSenderId());
+        pvChat.getMessages().add(new Message(wsMessage.getSenderId(), wsMessage.getContent(), new Timestamp(System.currentTimeMillis()).toString(),readBy, wsMessage.getAttachments()));
         privateChatRepository.save(pvChat);
     }
 }

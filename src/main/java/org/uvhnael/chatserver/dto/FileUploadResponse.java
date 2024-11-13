@@ -1,4 +1,4 @@
-package org.uvhnael.chatserver.controller;
+package org.uvhnael.chatserver.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

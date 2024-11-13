@@ -3,12 +3,13 @@ package org.uvhnael.chatserver.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.uvhnael.chatserver.dto.CreateGroupRequest;
+import org.uvhnael.chatserver.dto.FriendResponse;
 import org.uvhnael.chatserver.dto.MessageResponse;
 import org.uvhnael.chatserver.exception.ChatNotFoundException;
 import org.uvhnael.chatserver.model.GroupChat;
 import org.uvhnael.chatserver.model.GroupMember;
 import org.uvhnael.chatserver.model.Message;
-import org.uvhnael.chatserver.model.PrivateChat;
+import org.uvhnael.chatserver.model.User;
 import org.uvhnael.chatserver.repository.GroupChatRepository;
 import org.uvhnael.chatserver.repository.UserRepository;
 import org.uvhnael.chatserver.websocket.WSMessage;
@@ -45,7 +46,7 @@ public class GroupChatService {
         });
         return messageResponses;
     }
-    public void createGroupChat(CreateGroupRequest request) {
+    public String createGroupChat(CreateGroupRequest request) {
         GroupChat groupChat = new GroupChat();
         groupChat.setAdminId(request.getUserId());
         groupChat.setName(request.getGroupName());
@@ -63,6 +64,8 @@ public class GroupChatService {
         groupChat.setMembers(members);
         groupChat.setCreatedAt(new Timestamp(System.currentTimeMillis()).toString());
         groupChatRepository.save(groupChat);
+
+        return groupChat.getId();
     }
 
     public List<String> getReceiverId(String chatId, String senderId) {
@@ -78,7 +81,27 @@ public class GroupChatService {
             throw new ChatNotFoundException("Chat not found");
         }
         GroupChat gChat = chat.get();
-        gChat.getMessages().add(new Message(wsMessage.getSenderId(), wsMessage.getContent(), new Timestamp(System.currentTimeMillis()).toString(), wsMessage.getAttachments()));
+        List<String> readBy = new ArrayList<>();
+        readBy.add(wsMessage.getSenderId());
+        gChat.getMessages().add(new Message(wsMessage.getSenderId(), wsMessage.getContent(), new Timestamp(System.currentTimeMillis()).toString(),readBy, wsMessage.getAttachments()));
         groupChatRepository.save(gChat);
+    }
+
+    public List<FriendResponse> getParticipants(String chatId) {
+        Optional<GroupChat> chat = groupChatRepository.findById(chatId);
+        if(chat.isEmpty()) {
+            throw new ChatNotFoundException("Chat not found");
+        }
+        List<FriendResponse> participants = new ArrayList<>();
+        chat.get().getMembers().forEach(m -> {
+            Optional<User> user = userRepository.findById(m.getUserId());
+            if(user.isEmpty()) {
+                return;
+            }
+            User u = user.get();
+
+            participants.add(new FriendResponse(m.getUserId(), u.getImage() != null ? u.getImage() : "uploads/user.jpg" , u.getUsername()));
+        });
+        return participants;
     }
 }

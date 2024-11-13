@@ -7,15 +7,13 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.uvhnael.chatserver.dto.ChatListResponse;
-import org.uvhnael.chatserver.dto.CreateGroupRequest;
-import org.uvhnael.chatserver.dto.ErrorResponse;
-import org.uvhnael.chatserver.dto.MessageResponse;
+import org.uvhnael.chatserver.dto.*;
 import org.uvhnael.chatserver.exception.ChatNotFoundException;
 import org.uvhnael.chatserver.model.Message;
 import org.uvhnael.chatserver.service.ChatService;
 import org.uvhnael.chatserver.service.GroupChatService;
 import org.uvhnael.chatserver.service.PrivateChatService;
+import org.uvhnael.chatserver.websocket.WSCreateGroup;
 import org.uvhnael.chatserver.websocket.WSMessage;
 
 import java.util.List;
@@ -91,6 +89,18 @@ public class ChatController {
         }
     }
 
+    @GetMapping("/group/{chatId}/participants")
+    public ResponseEntity<?> getGroupParticipants(@PathVariable String chatId) {
+        try {
+            List<FriendResponse> participants = groupChatService.getParticipants(chatId);
+            return ResponseEntity.ok(participants);
+        } catch (ChatNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(createErrorResponse("Chat not found", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(createErrorResponse("Unexpected error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<?> getChats(@PathVariable String userId) {
         try {
@@ -104,7 +114,14 @@ public class ChatController {
     @PostMapping("/group/create")
     public ResponseEntity<?> createGroupChat(@RequestBody CreateGroupRequest request) {
         try {
-            groupChatService.createGroupChat(request);
+            String id = groupChatService.createGroupChat(request);
+
+            WSCreateGroup wsCreateGroup = new WSCreateGroup(id, request.getGroupName());
+
+            request.getParticipants().forEach(p -> {
+                simpMessagingTemplate.convertAndSendToUser(p, "/queue/messages", wsCreateGroup);
+            });
+
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(createErrorResponse("Unexpected error", e.getMessage()));

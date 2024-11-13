@@ -18,6 +18,7 @@ public class GroupChat {
     @Id
     private String id;
     private String name;
+    private String image;
     private String adminId;
     private List<GroupMember> members = new ArrayList<>();
     private List<Message> messages = new ArrayList<>();

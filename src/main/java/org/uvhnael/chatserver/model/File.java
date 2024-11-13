@@ -21,7 +21,6 @@ public class File {
     private long fileSize;
     private String uploadTimestamp;
     private String chatId;
-    private String groupId;
 
     // Getters và Setters
 }

@@ -30,7 +30,8 @@ public class ChatService {
             if(chat.getMessages().isEmpty()) {
                 return;
             }
-            chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().add(userId);
+            if(!chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().contains(userId))
+                chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().add(userId);
             groupChatRepository.save(chat);
         }
         else {
@@ -38,7 +39,8 @@ public class ChatService {
             if(chat.getMessages().isEmpty()) {
                 return;
             }
-            chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().add(userId);
+            if(!chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().contains(userId))
+                chat.getMessages().get(chat.getMessages().size() - 1).getReadBy().add(userId);
             privateChatRepository.save(chat);
         }
     }
@@ -79,6 +81,7 @@ public class ChatService {
             chatList.add(new ChatListResponse(
                     chat.getId(),
                     friend.getUsername(),
+                    friend.getImage() != null ? friend.getImage() : "uploads/user.jpg",
                     message != null ? lastSenderUsername + message.getContent() : "",
                     message != null ? message.getTimestamp() : chat.getCreatedAt(),
                     unreadCount,
@@ -117,6 +120,7 @@ public class ChatService {
             chatList.add(new ChatListResponse(
                     chat.getId(),
                     chat.getName(),
+                    chat.getImage() != null ? chat.getImage() : "uploads/group.jpg",
                     message != null ? lastSenderUsername + message.getContent() : "",
                     message != null ? message.getTimestamp() : chat.getCreatedAt(),
                     unreadCount,
